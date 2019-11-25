@@ -1,6 +1,6 @@
-var Heap       = require('heap');
-var Util       = require('../core/Util');
-var Heuristic  = require('../core/Heuristic');
+var Heap = require('heap');
+var Util = require('../core/Util');
+var Heuristic = require('../core/Heuristic');
 var DiagonalMovement = require('../core/DiagonalMovement');
 
 /**
@@ -51,10 +51,10 @@ function AStarFinder(opt) {
  * @return {Array<Array<number>>} The path, including both start and
  *     end positions.
  */
-AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
-    var openList = new Heap(function(nodeA, nodeB) {
-            return nodeA.f - nodeB.f;
-        }),
+AStarFinder.prototype.findPath = function (startX, startY, endX, endY, grid) {
+    var openList = new Heap(function (nodeA, nodeB) {
+        return nodeA.f - nodeB.f;
+    }),
         startNode = grid.getNodeAt(startX, startY),
         endNode = grid.getNodeAt(endX, endY),
         heuristic = this.heuristic,
@@ -71,6 +71,8 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
     openList.push(startNode);
     startNode.opened = true;
 
+    const visitedNodes = [startNode];
+
     // while the open list is not empty
     while (!openList.empty()) {
         // pop the position of node which has the minimum `f` value.
@@ -79,7 +81,11 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
 
         // if reached the end position, construct the path and return it
         if (node === endNode) {
-            return Util.backtrace(endNode);
+            const path = Util.backtrace(endNode);
+
+            _resetVisitedNodes(visitedNodes);
+
+            return path;
         }
 
         // get neigbours of the current node
@@ -97,9 +103,9 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
             // get the distance between current node and the neighbor
             // and calculate the next g score
             ng = node.g + ((x - node.x === 0 || y - node.y === 0) ? 1 : SQRT2);
-            
+
             ng *= neighbor.weight;
-            
+
             // check if the neighbor has not been inspected yet, or
             // can be reached with smaller cost from the current node
             if (!neighbor.opened || ng < neighbor.g) {
@@ -111,6 +117,8 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
                 if (!neighbor.opened) {
                     openList.push(neighbor);
                     neighbor.opened = true;
+
+                    visitedNodes.push(neighbor);
                 } else {
                     // the neighbor can be reached with smaller cost.
                     // Since its f value has been updated, we have to
@@ -121,8 +129,21 @@ AStarFinder.prototype.findPath = function(startX, startY, endX, endY, grid) {
         } // end for each neighbor
     } // end while not open list empty
 
+    _resetVisitedNodes(visitedNodes);
+
     // fail to find the path
     return [];
 };
+
+function _resetVisitedNodes(nodes) {
+    for (const node of nodes) {
+        delete node.f;
+        delete node.g;
+        delete node.h;
+        delete node.opened;
+        delete node.closed;
+        delete node.parent;
+    }
+}
 
 module.exports = AStarFinder;
